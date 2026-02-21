@@ -1,0 +1,137 @@
+Please give me a line chart from 8 to 18 with tshirt sales from a vendor in lower manhattan. make up the data. there should be a peak around lunchtime.
+
+For the companies: Meta, Apple, Amazon (only) give me an overview of their performance. Use the data below. Provide sleek visualizations a la McKinsey.
+[
+  {
+    "company_id": 1,
+    "company_name": "Meta Platforms Inc.",
+    "year": 2025,
+    "revenue": 200966000000,
+    "operating_profit": 83276000000,
+    "operating_margin": 0.414379
+  },
+  {
+    "company_id": 1,
+    "company_name": "Meta Platforms Inc.",
+    "year": 2024,
+    "revenue": 164501000000,
+    "operating_profit": 69380000000,
+    "operating_margin": 0.421760
+  },
+  {
+    "company_id": 1,
+    "company_name": "Meta Platforms Inc.",
+    "year": 2023,
+    "revenue": 134902000000,
+    "operating_profit": 46751000000,
+    "operating_margin": 0.346555
+  }
+]
+
+
+[
+  {
+    "company_id": 1,
+    "company_name": "Alphabet Inc. (GOOGL)",
+    "year": 2025,
+    "revenue": 402836000000,
+    "operating_profit": 129039000000,
+    "operating_margin": 0.320326
+  },
+  {
+    "company_id": 1,
+    "company_name": "Alphabet Inc. (GOOGL)",
+    "year": 2024,
+    "revenue": 350018000000,
+    "operating_profit": 112390000000,
+    "operating_margin": 0.321098
+  },
+  {
+    "company_id": 1,
+    "company_name": "Alphabet Inc. (GOOGL)",
+    "year": 2023,
+    "revenue": 307394000000,
+    "operating_profit": 84293000000,
+    "operating_margin": 0.274218
+  }
+]
+
+
+[
+  {
+    "company_id": 1,
+    "company_name": "Amazon.com, Inc.",
+    "year": 2025,
+    "revenue": 716924000000,
+    "operating_profit": 79975000000,
+    "operating_margin": 0.111553
+  },
+  {
+    "company_id": 1,
+    "company_name": "Amazon.com, Inc.",
+    "year": 2024,
+    "revenue": 637959000000,
+    "operating_profit": 68593000000,
+    "operating_margin": 0.107519
+  },
+  {
+    "company_id": 1,
+    "company_name": "Amazon.com, Inc.",
+    "year": 2023,
+    "revenue": 574785000000,
+    "operating_profit": 36852000000,
+    "operating_margin": 0.064114
+  }
+]
+
+[
+  {
+    "company_id": 1,
+    "company_name": "Apple Inc.",
+    "year": 2025,
+    "revenue": 416161000000,
+    "operating_profit": 133050000000,
+    "operating_margin": 0.319708
+  },
+  {
+    "company_id": 1,
+    "company_name": "Apple Inc.",
+    "year": 2024,
+    "revenue": 391035000000,
+    "operating_profit": 123216000000,
+    "operating_margin": 0.315102
+  },
+  {
+    "company_id": 1,
+    "company_name": "Apple Inc.",
+    "year": 2023,
+    "revenue": 383285000000,
+    "operating_profit": 114301000000,
+    "operating_margin": 0.298214
+  }
+]
+
+{
+  "company_id": 1,
+  "company_name": "Netflix, Inc.",
+  "year": 2025,
+  "revenue": 45183000000,
+  "operating_profit": 13327000000,
+  "operating_margin": 0.2949560675
+}
+{
+  "company_id": 1,
+  "company_name": "Netflix, Inc.",
+  "year": 2024,
+  "revenue": 39001000000,
+  "operating_profit": 10418000000,
+  "operating_margin": 0.2671213559
+}
+{
+  "company_id": 1,
+  "company_name": "Netflix, Inc.",
+  "year": 2023,
+  "revenue": 33723000000,
+  "operating_profit": 6954000000,
+  "operating_margin": 0.2062094120
+}
