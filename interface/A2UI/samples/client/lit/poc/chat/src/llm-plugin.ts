@@ -1,6 +1,11 @@
 import type { Plugin, ViteDevServer } from "vite";
 import Anthropic from "@anthropic-ai/sdk";
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages";
+import {
+  RADAR_DATA,
+  CATEGORY_WEIGHTS,
+  computeComposite,
+} from "./radar-data.js";
 
 // ─── Terminal colors ───────────────────────────────────────────────
 const C = {
@@ -182,7 +187,6 @@ function validateAndRepairMessages(
       result.warnings.push(`Duplicate component IDs: ${duplicateIds.join(", ")}`);
     }
 
-    // Repair: remove self-references
     for (const comp of components) {
       if (removeSelfReferences(comp)) {
         result.repaired = true;
@@ -192,7 +196,6 @@ function validateAndRepairMessages(
       }
     }
 
-    // Check for circular dependencies
     for (const comp of components) {
       const cycle = detectCycle(comp.id, compMap, new Set(), []);
       if (cycle) {
@@ -200,7 +203,6 @@ function validateAndRepairMessages(
         result.errors.push(`Circular dependency: ${cycleStr}`);
         result.valid = false;
 
-        // Attempt repair: break the cycle by removing the back-edge
         const loopBackId = cycle[cycle.length - 1];
         const parentIdx = cycle.indexOf(loopBackId);
         if (parentIdx < cycle.length - 1) {
@@ -240,7 +242,6 @@ function validateAndRepairMessages(
       }
     }
 
-    // Check for missing child references
     for (const comp of components) {
       for (const childId of getChildRefs(comp)) {
         if (!compMap.has(childId)) {
@@ -252,7 +253,6 @@ function validateAndRepairMessages(
       }
     }
 
-    // Check root exists
     for (const br of beginRenderings) {
       const begin = br.beginRendering as { root?: string };
       if (begin?.root && !compMap.has(begin.root)) {
@@ -267,9 +267,76 @@ function validateAndRepairMessages(
   return result;
 }
 
+// ─── Build RadarAI context for the system prompt ──────────────────
+
+function buildRadarContext(): string {
+  const lines: string[] = [];
+
+  lines.push("## RadarAI Company Intelligence Data (Live Backend)\n");
+  lines.push(`As-of date: ${RADAR_DATA.metadata.as_of}`);
+  lines.push(`Peer group: ${RADAR_DATA.metadata.peer_group}`);
+  lines.push(`Score scale: ${RADAR_DATA.metadata.score_scale}\n`);
+  lines.push("### Radar Dimensions & Category Weights\n");
+
+  for (const dim of RADAR_DATA.dimensions) {
+    const w = CATEGORY_WEIGHTS[dim];
+    lines.push(`- **${dim}**: weight ${(w * 100).toFixed(0)}%`);
+  }
+
+  lines.push("\n### Company Scores (0-100 percentile within peer group)\n");
+
+  for (const company of RADAR_DATA.companies) {
+    const composite = computeComposite(company.scores);
+    lines.push(`#### ${company.label} (${company.ticker}) — Composite: ${composite}`);
+    for (const dim of RADAR_DATA.dimensions) {
+      lines.push(`  - ${dim}: ${company.scores[dim]}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("### Ranking Summary\n");
+
+  const ranked = RADAR_DATA.companies
+    .map((c) => ({ label: c.label, composite: computeComposite(c.scores) }))
+    .sort((a, b) => b.composite - a.composite);
+
+  for (let i = 0; i < ranked.length; i++) {
+    lines.push(`${i + 1}. ${ranked[i].label}: ${ranked[i].composite}`);
+  }
+
+  return lines.join("\n");
+}
+
 // ─── System Prompt ─────────────────────────────────────────────────
 
-const A2UI_SYSTEM_PROMPT = `You are an AI assistant that generates dynamic user interfaces using the A2UI declarative JSON format.
+const A2UI_SYSTEM_PROMPT = `You are RadarAI, a Company Intelligence Radar assistant specialized in fashion industry analysis. You have access to a backend scoring system that rates 7 global fashion companies across 9 analytical dimensions on a 0-100 percentile scale.
+
+Your primary capabilities:
+1. Visualize company radar scores as interactive charts (radar, bar, line, etc.)
+2. Compare companies across dimensions
+3. Explain scoring methodology and investment implications
+4. Drill down into specific dimensions or companies
+
+${buildRadarContext()}
+
+### Scoring Methodology
+- **Method**: Robust z-score normalization (median-based, outlier-resistant)
+- **Clamping**: ±3 standard deviations
+- **Missing data**: Reweighted among available signals
+- **Focus**: Structurally predictive metrics that signal long-term compounding potential
+- ROIC, revenue durability, and margin stability are weighted most heavily
+- Capital allocation discipline and competitive advantage indicators are critical
+
+### Key Insights to Reference
+- **Inditex** leads on Capital Discipline (90) driven by exceptional ROIC and FCF generation
+- **Lululemon** leads on Profitability (92) with industry-best gross margins and DTC model
+- **Nike** leads on Competitive Positioning (88) due to brand power and market share, but Narrative momentum (38) is weak due to recent restructuring
+- **Fast Retailing** leads on Growth Quality (90) driven by Uniqlo international expansion
+- **adidas** has strong Narrative Momentum (82) reflecting turnaround sentiment
+- **Under Armour** scores lowest across most dimensions, reflecting brand and operational challenges
+- **H&M** is mid-pack but weak on Structural Risk (38) due to geographic/supplier concentration
+
+When the user asks a question, respond with a visually rich A2UI interface. Default to radar charts for company comparisons. Use bar charts for single-dimension comparisons. Use the actual score data above — never make up numbers.
 
 Your response MUST be a valid JSON array of A2UI messages. Do NOT include any text outside the JSON. Do NOT wrap in markdown fences.
 
@@ -345,94 +412,16 @@ The dataModelUpdate contents array uses this recursive structure:
 
 Within templates (List with template children), data paths are relative to each item in the bound map.
 
-## Example 1: Simple Info Card
-
-[
-  { "beginRendering": { "surfaceId": "default", "root": "root" } },
-  { "surfaceUpdate": { "surfaceId": "default", "components": [
-    { "id": "root", "component": { "Card": { "child": "card-col" } } },
-    { "id": "card-col", "component": { "Column": { "children": { "explicitList": ["title-text", "desc-text", "action-btn"] } } } },
-    { "id": "title-text", "component": { "Text": { "text": { "path": "title" }, "usageHint": "h2" } } },
-    { "id": "desc-text", "component": { "Text": { "text": { "path": "description" }, "usageHint": "body" } } },
-    { "id": "action-btn", "component": { "Button": { "child": "btn-text", "primary": true, "action": { "name": "learn_more" } } } },
-    { "id": "btn-text", "component": { "Text": { "text": { "literalString": "Learn More" } } } }
-  ] } },
-  { "dataModelUpdate": { "surfaceId": "default", "path": "/", "contents": [
-    { "key": "title", "valueString": "Welcome!" },
-    { "key": "description", "valueString": "This is a dynamically generated card." }
-  ] } }
-]
-
-## Example 2: Data-Driven List
-
-[
-  { "beginRendering": { "surfaceId": "default", "root": "root-col" } },
-  { "surfaceUpdate": { "surfaceId": "default", "components": [
-    { "id": "root-col", "component": { "Column": { "children": { "explicitList": ["heading-text", "item-list"] } } } },
-    { "id": "heading-text", "component": { "Text": { "text": { "path": "title" }, "usageHint": "h1" } } },
-    { "id": "item-list", "component": { "List": { "direction": "vertical", "children": { "template": { "componentId": "item-card", "dataBinding": "/items" } } } } },
-    { "id": "item-card", "component": { "Card": { "child": "item-row" } } },
-    { "id": "item-row", "component": { "Row": { "children": { "explicitList": ["item-icon", "item-details-col"] } } } },
-    { "id": "item-icon", "component": { "Icon": { "name": { "literalString": "star" } } } },
-    { "id": "item-details-col", "weight": 1, "component": { "Column": { "children": { "explicitList": ["item-name-text", "item-desc-text"] } } } },
-    { "id": "item-name-text", "component": { "Text": { "text": { "path": "name" }, "usageHint": "h3" } } },
-    { "id": "item-desc-text", "component": { "Text": { "text": { "path": "detail" }, "usageHint": "body" } } }
-  ] } },
-  { "dataModelUpdate": { "surfaceId": "default", "path": "/", "contents": [
-    { "key": "title", "valueString": "Top Items" },
-    { "key": "items", "valueMap": [
-      { "key": "i1", "valueMap": [ { "key": "name", "valueString": "Item One" }, { "key": "detail", "valueString": "First item description" } ] },
-      { "key": "i2", "valueMap": [ { "key": "name", "valueString": "Item Two" }, { "key": "detail", "valueString": "Second item description" } ] }
-    ] }
-  ] } }
-]
-
-## Example 3: Form
-
-[
-  { "beginRendering": { "surfaceId": "default", "root": "form-card" } },
-  { "surfaceUpdate": { "surfaceId": "default", "components": [
-    { "id": "form-card", "component": { "Card": { "child": "form-col" } } },
-    { "id": "form-col", "component": { "Column": { "children": { "explicitList": ["form-title-text", "name-field", "email-field", "msg-field", "submit-btn"] } } } },
-    { "id": "form-title-text", "component": { "Text": { "text": { "literalString": "Contact Us" }, "usageHint": "h2" } } },
-    { "id": "name-field", "component": { "TextField": { "label": { "literalString": "Name" }, "text": { "path": "name" }, "type": "shortText" } } },
-    { "id": "email-field", "component": { "TextField": { "label": { "literalString": "Email" }, "text": { "path": "email" }, "type": "shortText" } } },
-    { "id": "msg-field", "component": { "TextField": { "label": { "literalString": "Message" }, "text": { "path": "message" }, "type": "longText" } } },
-    { "id": "submit-btn", "component": { "Button": { "child": "submit-text", "primary": true, "action": { "name": "submit_form", "context": [ { "key": "name", "value": { "path": "name" } }, { "key": "email", "value": { "path": "email" } }, { "key": "message", "value": { "path": "message" } } ] } } } },
-    { "id": "submit-text", "component": { "Text": { "text": { "literalString": "Send" } } } }
-  ] } },
-  { "dataModelUpdate": { "surfaceId": "default", "path": "/", "contents": [
-    { "key": "name", "valueString": "" },
-    { "key": "email", "valueString": "" },
-    { "key": "message", "valueString": "" }
-  ] } }
-]
-
-## Example 4: Interactive Bar Chart (using the Chart component)
-
-[
-  { "beginRendering": { "surfaceId": "default", "root": "chart-card" } },
-  { "surfaceUpdate": { "surfaceId": "default", "components": [
-    { "id": "chart-card", "component": { "Card": { "child": "chart-col" } } },
-    { "id": "chart-col", "component": { "Column": { "children": { "explicitList": ["chart-heading-text", "revenue-chart", "chart-hint-text"] } } } },
-    { "id": "chart-heading-text", "component": { "Text": { "text": { "literalString": "Quarterly Revenue" }, "usageHint": "h2" } } },
-    { "id": "revenue-chart", "component": { "Chart": { "chartType": "bar", "labels": ["Q1", "Q2", "Q3", "Q4"], "datasets": [{ "label": "2024 Revenue ($M)", "data": [4.2, 5.1, 4.8, 6.3], "backgroundColor": "rgba(129, 140, 248, 0.7)", "borderColor": "#818cf8" }, { "label": "2025 Revenue ($M)", "data": [5.0, 5.8, 5.5, 7.1], "backgroundColor": "rgba(167, 139, 250, 0.7)", "borderColor": "#a78bfa" }] } } },
-    { "id": "chart-hint-text", "component": { "Text": { "text": { "literalString": "Click any bar to drill down into that quarter" }, "usageHint": "caption" } } }
-  ] } },
-  { "dataModelUpdate": { "surfaceId": "default", "path": "/", "contents": [
-    { "key": "placeholder", "valueString": "" }
-  ] } }
-]
-
-## Example 5: Radar/Spider Chart
+## Example: Radar Chart (Company Comparison)
 
 [
   { "beginRendering": { "surfaceId": "default", "root": "radar-card" } },
   { "surfaceUpdate": { "surfaceId": "default", "components": [
     { "id": "radar-card", "component": { "Card": { "child": "radar-col" } } },
-    { "id": "radar-col", "component": { "Column": { "children": { "explicitList": ["radar-heading-text", "perf-radar-chart"] } } } },
-    { "id": "radar-heading-text", "component": { "Text": { "text": { "literalString": "Company Performance" }, "usageHint": "h2" } } },
-    { "id": "perf-radar-chart", "component": { "Chart": { "chartType": "radar", "labels": ["Revenue", "Profit Margin", "Growth", "Customer Sat.", "Market Share", "Innovation"], "datasets": [{ "label": "Our Company", "data": [85, 72, 90, 88, 65, 78], "backgroundColor": "rgba(129, 140, 248, 0.3)", "borderColor": "#818cf8" }, { "label": "Industry Avg", "data": [70, 65, 60, 75, 70, 55], "backgroundColor": "rgba(248, 113, 113, 0.3)", "borderColor": "#f87171" }] } } }
+    { "id": "radar-col", "component": { "Column": { "children": { "explicitList": ["radar-heading-text", "perf-radar-chart", "radar-caption-text"] } } } },
+    { "id": "radar-heading-text", "component": { "Text": { "text": { "literalString": "Fashion Industry Intelligence Radar" }, "usageHint": "h2" } } },
+    { "id": "perf-radar-chart", "component": { "Chart": { "chartType": "radar", "labels": ["Growth Quality", "Revenue Durability", "Profitability", "Capital Discipline", "Competitive Positioning", "Narrative Momentum", "Governance", "Expectation vs Reality", "Structural Risk"], "datasets": [{ "label": "Nike", "data": [52, 82, 78, 75, 88, 38, 65, 42, 55], "backgroundColor": "rgba(245, 130, 32, 0.25)", "borderColor": "#F58220" }, { "label": "Lululemon", "data": [85, 78, 92, 88, 76, 72, 70, 65, 68], "backgroundColor": "rgba(190, 30, 45, 0.25)", "borderColor": "#BE1E2D" }] } } },
+    { "id": "radar-caption-text", "component": { "Text": { "text": { "literalString": "Click any data point to drill down into that dimension" }, "usageHint": "caption" } } }
   ] } },
   { "dataModelUpdate": { "surfaceId": "default", "path": "/", "contents": [
     { "key": "placeholder", "valueString": "" }
@@ -455,7 +444,8 @@ Within templates (List with template children), data paths are relative to each 
 12. Use Cards to group related content visually.
 13. **For any chart, graph, or visualization request, use the custom "Chart" component.** See the "Charts and Graphs" section above for properties. NEVER fake charts with Rows/Text or use Image+QuickChart.
 14. When generating Chart component JSON, the "labels" array and "datasets" array are direct JSON (not strings). Each dataset's "data" array must have the same length as "labels".
-15. **Wrap every Chart in a Card for consistent styling.** Add a heading Text above and optionally a caption Text below explaining click-to-drill-down.`;
+15. **Wrap every Chart in a Card for consistent styling.** Add a heading Text above and optionally a caption Text below explaining click-to-drill-down.
+16. **Use the REAL company score data provided above.** Never invent scores. Always reference actual values from the backend data.`;
 
 // ─── Session state ─────────────────────────────────────────────────
 
@@ -467,6 +457,15 @@ export function a2uiLLMPlugin(): Plugin {
   return {
     name: "anthropic-a2ui",
     configureServer(server: ViteDevServer) {
+      // ── /api/radar — serves radar score data to the frontend ──
+      server.middlewares.use("/api/radar", (_req, res) => {
+        log("API", C.green, "Serving radar data");
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(RADAR_DATA));
+      });
+
+      // ── /api/chat — LLM endpoint ──
       server.middlewares.use("/api/chat", (req, res, next) => {
         if (req.method !== "POST") {
           next();
@@ -537,7 +536,6 @@ export function a2uiLLMPlugin(): Plugin {
               `Claude response (${rawText.length} chars):\n${rawText}`
             );
 
-            // Parse JSON
             let a2uiMessages: unknown[];
             try {
               let cleaned = rawText.trim();
@@ -562,7 +560,6 @@ export function a2uiLLMPlugin(): Plugin {
               a2uiMessages = [];
             }
 
-            // Validate & repair
             if (a2uiMessages.length > 0) {
               const validation = validateAndRepairMessages(a2uiMessages);
 
@@ -586,7 +583,6 @@ export function a2uiLLMPlugin(): Plugin {
                 );
                 a2uiMessages = validation.messages;
 
-                // Re-validate after repair
                 const recheck = validateAndRepairMessages(a2uiMessages);
                 if (recheck.errors.length > 0) {
                   log(

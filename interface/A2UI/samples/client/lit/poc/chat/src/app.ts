@@ -592,7 +592,7 @@ export class A2UIChatPoc extends SignalWatcher(LitElement) {
     return html`
       <div class="chat-header">
         <h1>RadarAI</h1>
-        <p>Ask me anything &mdash; I'll visualize it live</p>
+        <p>Fashion industry intelligence &mdash; 7 companies, 9 dimensions, visualized live</p>
       </div>
 
       ${this._annotating ? this._renderAnnotationToolbar() : nothing}
@@ -677,18 +677,19 @@ export class A2UIChatPoc extends SignalWatcher(LitElement) {
 
   private _renderWelcome() {
     const suggestions = [
-      "Show quarterly revenue with a bar chart",
-      "Compare team performance on a spider chart",
-      "Build a company dashboard",
-      "Design a booking form",
+      "Compare all 7 fashion companies on a radar chart",
+      "Show Nike vs Lululemon vs Inditex head-to-head",
+      "Which company has the best capital discipline?",
+      "Rank companies by composite score with a bar chart",
     ];
 
     return html`
       <div class="welcome">
-        <span class="g-icon icon">chat</span>
+        <span class="g-icon icon">radar</span>
         <p>
-          Ask a question or describe what you'd like to see.
-          I'll generate interactive charts and UI on the fly.
+          Compare Nike, Lululemon, Inditex, adidas, and more across
+          Growth, Profitability, Capital Discipline, and 6 other dimensions.
+          Ask a question and I'll generate interactive visualizations.
         </p>
         <div class="suggestions">
           ${suggestions.map(
