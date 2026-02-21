@@ -80,7 +80,7 @@ class RedisVLStore:
                     "name": "embedding",
                     "type": "vector",
                     "attrs": {
-                        "dims": 1536,
+                        "dims": 1024,
                         "distance_metric": "cosine",
                         "algorithm": "hnsw",
                         "datatype": "float32"
@@ -295,7 +295,7 @@ class RedisVLStore:
         Search document chunks by vector similarity with optional filters
 
         Args:
-            query_embedding: Query vector (1536 dims)
+            query_embedding: Query vector (1024 dims for voyage-2)
             company_id: Filter by company
             doc_type: Filter by document type
             section: Filter by section

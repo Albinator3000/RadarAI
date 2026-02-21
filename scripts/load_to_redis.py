@@ -15,7 +15,7 @@ from typing import List
 from datetime import datetime
 
 from loguru import logger
-import openai
+import voyageai
 
 from src.config import settings
 from src.models import DocumentChunk, Manifest
@@ -36,7 +36,7 @@ class RedisLoader:
         self.manifest_path = manifest_path
         self.manifest = self._load_manifest()
         self.redis_store = RedisVLStore()
-        self.openai_client = openai.OpenAI(api_key=settings.openai_api_key)
+        self.voyage_client = voyageai.Client(api_key=settings.voyage_api_key)
 
     def _load_manifest(self) -> Manifest:
         """Load manifest from JSON"""
@@ -46,19 +46,20 @@ class RedisLoader:
 
     def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding for text using OpenAI
+        Generate embedding for text using Voyage AI
 
         Args:
             text: Text to embed
 
         Returns:
-            Embedding vector (1536 dims)
+            Embedding vector (1024 dims for voyage-2)
         """
-        response = self.openai_client.embeddings.create(
-            model="text-embedding-ada-002",
-            input=text[:8000]  # Limit to ~8k chars
+        result = self.voyage_client.embed(
+            texts=[text[:4000]],  # Voyage limit is ~4k tokens
+            model=settings.embedding_model,
+            input_type="document"
         )
-        return response.data[0].embedding
+        return result.embeddings[0]
 
     def load_document(self, file_metadata) -> int:
         """

@@ -6,8 +6,15 @@ from typing import List, Dict, Optional, Tuple
 
 import pymupdf  # PyMuPDF
 import pdfplumber
-import camelot
 from loguru import logger
+
+# Camelot is optional (requires system dependencies)
+try:
+    import camelot
+    CAMELOT_AVAILABLE = True
+except ImportError:
+    CAMELOT_AVAILABLE = False
+    logger.warning("Camelot not available - table extraction will use pdfplumber only")
 
 
 class PDFExtractor:
@@ -160,63 +167,65 @@ class PDFExtractor:
         output_dir.mkdir(parents=True, exist_ok=True)
         table_paths = []
 
-        try:
-            # Try camelot first (works well with vector PDFs)
-            tables = camelot.read_pdf(
-                str(pdf_path),
-                pages="all",
-                flavor="lattice",  # For tables with borders
-                suppress_stdout=True
-            )
-
-            # If no tables found, try stream mode
-            if len(tables) == 0:
+        # Try Camelot first if available (works well with vector PDFs)
+        if CAMELOT_AVAILABLE:
+            try:
                 tables = camelot.read_pdf(
                     str(pdf_path),
                     pages="all",
-                    flavor="stream",  # For tables without borders
+                    flavor="lattice",  # For tables with borders
                     suppress_stdout=True
                 )
 
-            # Save each table as CSV
-            for i, table in enumerate(tables):
-                csv_filename = f"{pdf_path.stem}__table_{i:03d}.csv"
-                csv_path = output_dir / csv_filename
+                # If no tables found, try stream mode
+                if len(tables) == 0:
+                    tables = camelot.read_pdf(
+                        str(pdf_path),
+                        pages="all",
+                        flavor="stream",  # For tables without borders
+                        suppress_stdout=True
+                    )
 
-                table.df.to_csv(csv_path, index=False)
-                table_paths.append(str(csv_path))
+                # Save each table as CSV
+                for i, table in enumerate(tables):
+                    csv_filename = f"{pdf_path.stem}__table_{i:03d}.csv"
+                    csv_path = output_dir / csv_filename
 
-            logger.info(f"Extracted {len(table_paths)} tables from {pdf_path.name}")
+                    table.df.to_csv(csv_path, index=False)
+                    table_paths.append(str(csv_path))
 
-        except Exception as e:
-            logger.warning(f"Camelot extraction failed for {pdf_path.name}: {e}")
+                logger.info(f"Extracted {len(table_paths)} tables from {pdf_path.name} using Camelot")
+                return table_paths
 
-            # Fallback to pdfplumber
-            try:
-                with pdfplumber.open(pdf_path) as pdf:
-                    for page_num, page in enumerate(pdf.pages):
-                        tables = page.extract_tables()
+            except Exception as e:
+                logger.warning(f"Camelot extraction failed for {pdf_path.name}: {e}")
 
-                        for table_num, table in enumerate(tables):
-                            if not table:
-                                continue
+        # Fallback to pdfplumber
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                for page_num, page in enumerate(pdf.pages):
+                    tables = page.extract_tables()
 
-                            # Convert to CSV
-                            csv_filename = f"{pdf_path.stem}__table_p{page_num:03d}_t{table_num:02d}.csv"
-                            csv_path = output_dir / csv_filename
+                    for table_num, table in enumerate(tables):
+                        if not table:
+                            continue
 
-                            # Write CSV manually
-                            with open(csv_path, "w", encoding="utf-8") as f:
-                                for row in table:
-                                    cleaned_row = [str(cell).replace(",", ";") if cell else "" for cell in row]
-                                    f.write(",".join(cleaned_row) + "\n")
+                        # Convert to CSV
+                        csv_filename = f"{pdf_path.stem}__table_p{page_num:03d}_t{table_num:02d}.csv"
+                        csv_path = output_dir / csv_filename
 
-                            table_paths.append(str(csv_path))
+                        # Write CSV manually
+                        with open(csv_path, "w", encoding="utf-8") as f:
+                            for row in table:
+                                cleaned_row = [str(cell).replace(",", ";") if cell else "" for cell in row]
+                                f.write(",".join(cleaned_row) + "\n")
 
-                logger.info(f"Extracted {len(table_paths)} tables using pdfplumber")
+                        table_paths.append(str(csv_path))
 
-            except Exception as e2:
-                logger.error(f"Table extraction failed for {pdf_path.name}: {e2}")
+            logger.info(f"Extracted {len(table_paths)} tables using pdfplumber")
+
+        except Exception as e2:
+            logger.error(f"Table extraction failed for {pdf_path.name}: {e2}")
 
         return table_paths
 

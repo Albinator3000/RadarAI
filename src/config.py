@@ -19,8 +19,9 @@ class Settings(BaseSettings):
     redis_password: str = ""
     redis_url: str = "redis://localhost:6379"
 
-    # OpenAI
-    openai_api_key: str = ""
+    # Voyage AI
+    voyage_api_key: str = ""
+    embedding_model: str = "voyage-2"
 
     # Data fetching
     user_agent: str = "RadarAI/0.1.0 (Research Demo; contact@example.com)"
