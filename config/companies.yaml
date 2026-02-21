@@ -1,0 +1,77 @@
+companies:
+  - company_id: nike
+    company_name: Nike
+    ticker: NKE
+    exchange: NYSE
+    country: US
+    cik: "0000320187"
+    ir_url: https://investors.nike.com/
+    press_url: https://investors.nike.com/news-events/press-releases/
+    sustainability_url: https://purpose.nike.com/
+
+  - company_id: lululemon
+    company_name: Lululemon
+    ticker: LULU
+    exchange: NASDAQ
+    country: US
+    cik: "0001397187"
+    ir_url: https://investor.lululemon.com/
+    press_url: https://investor.lululemon.com/news-releases/
+    sustainability_url: https://corporate.lululemon.com/our-impact
+
+  - company_id: under_armour
+    company_name: Under Armour
+    ticker: UAA
+    exchange: NYSE
+    country: US
+    cik: "0001336917"
+    ir_url: https://about.underarmour.com/investors
+    press_url: https://about.underarmour.com/news
+    sustainability_url: https://about.underarmour.com/sustainability
+
+  - company_id: vf_corp
+    company_name: VF Corporation
+    ticker: VFC
+    exchange: NYSE
+    country: US
+    cik: "0000103379"
+    ir_url: https://investors.vfc.com/
+    press_url: https://investors.vfc.com/news-and-events/press-releases/
+    sustainability_url: https://www.vfc.com/sustainability
+
+  - company_id: ralph_lauren
+    company_name: Ralph Lauren
+    ticker: RL
+    exchange: NYSE
+    country: US
+    cik: "0001037038"
+    ir_url: https://investor.ralphlauren.com/
+    press_url: https://investor.ralphlauren.com/press-releases
+    sustainability_url: https://corporate.ralphlauren.com/
+
+  - company_id: inditex
+    company_name: Inditex
+    ticker: ITX.MC
+    exchange: BME
+    country: ES
+    ir_url: https://www.inditex.com/investors
+    press_url: https://www.inditex.com/
+    sustainability_url: https://www.inditex.com/sustainability
+
+  - company_id: hm
+    company_name: H&M
+    ticker: HMB.ST
+    exchange: NASDAQ_STOCKHOLM
+    country: SE
+    ir_url: https://hmgroup.com/investors/
+    press_url: https://hmgroup.com/news/
+    sustainability_url: https://hmgroup.com/sustainability/
+
+  - company_id: adidas
+    company_name: adidas
+    ticker: ADS.DE
+    exchange: XETRA
+    country: DE
+    ir_url: https://www.adidas-group.com/en/investors/
+    press_url: https://www.adidas-group.com/en/media/news-archive/
+    sustainability_url: https://www.adidas-group.com/en/sustainability/
