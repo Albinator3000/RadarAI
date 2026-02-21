@@ -1,1 +1,4 @@
 # RadarAI
+
+### Weighting Decisions
+I weight items more heavily when they are structurally predictive of long-term compounding (e.g., ROIC, revenue durability, margin stability), because low-frequency investors care more about durable cash-flow generation than short-term noise. Metrics that signal capital allocation discipline and competitive advantage receive higher weight since they historically separate multi-year winners from value traps. Narrative and positioning factors are weighted slightly lower because they are informative for asymmetry and risk shifts, but less foundational than core economics in determining long-term outcomes.

@@ -1,0 +1,89 @@
+
+version: 0.1.0
+peer_group: fashion_global
+score_scale: "0-100"
+
+normalization:
+  method: robust_zscore
+  clamp_std: 3
+  missing_policy: reweight
+
+categories:
+
+  growth_quality:
+    weight: 0.12
+    signals:
+      revenue_cagr_3y: { weight: 0.35, direction: higher_better }
+      organic_vs_acquisition_growth: { weight: 0.25, direction: higher_better }
+      segment_consistency: { weight: 0.20, direction: higher_better }
+      customer_concentration_trend: { weight: 0.20, direction: lower_better }
+
+  revenue_durability:
+    weight: 0.12
+    signals:
+      net_revenue_retention: { weight: 0.30, direction: higher_better }
+      contract_length: { weight: 0.15, direction: higher_better }
+      recurring_revenue_pct: { weight: 0.20, direction: higher_better }
+      churn_rate: { weight: 0.20, direction: lower_better }
+      switching_cost_language_score: { weight: 0.15, direction: higher_better }
+
+  profitability_unit_economics:
+    weight: 0.14
+    signals:
+      gross_margin_stability: { weight: 0.30, direction: higher_better }
+      contribution_margin: { weight: 0.25, direction: higher_better }
+      operating_leverage_trend: { weight: 0.25, direction: higher_better }
+      cohort_profitability: { weight: 0.20, direction: higher_better }
+
+  capital_discipline:
+    weight: 0.12
+    signals:
+      roic: { weight: 0.25, direction: higher_better }
+      fcf_margin: { weight: 0.25, direction: higher_better }
+      sbc_trend: { weight: 0.20, direction: lower_better }
+      net_share_change: { weight: 0.15, direction: lower_better }
+      mna_quality_score: { weight: 0.15, direction: higher_better }
+
+  competitive_positioning:
+    weight: 0.12
+    signals:
+      market_share: { weight: 0.25, direction: higher_better }
+      competitor_mentions_trend: { weight: 0.20, direction: lower_better }
+      pricing_power_language_score: { weight: 0.25, direction: higher_better }
+      innovation_mentions: { weight: 0.15, direction: higher_better }
+      hiring_acceleration: { weight: 0.15, direction: higher_better }
+
+  narrative_tone_momentum:
+    weight: 0.10
+    signals:
+      earnings_call_tone_shift: { weight: 0.30, direction: higher_better }
+      risk_factor_expansion_delta: { weight: 0.25, direction: lower_better }
+      news_sentiment_trend: { weight: 0.25, direction: higher_better }
+      guidance_tone_delta: { weight: 0.20, direction: higher_better }
+
+  governance_alignment:
+    weight: 0.10
+    signals:
+      insider_buy_sell_trend: { weight: 0.25, direction: higher_better }
+      executive_turnover: { weight: 0.25, direction: lower_better }
+      auditor_change_flag: { weight: 0.15, direction: lower_better }
+      litigation_mentions_trend: { weight: 0.20, direction: lower_better }
+      regulatory_mentions: { weight: 0.15, direction: lower_better }
+
+  expectation_vs_reality:
+    weight: 0.10
+    signals:
+      analyst_dispersion: { weight: 0.25, direction: higher_better }
+      earnings_surprise_consistency: { weight: 0.20, direction: higher_better }
+      implied_vs_realized_growth_gap: { weight: 0.25, direction: lower_better }
+      short_interest_trend: { weight: 0.15, direction: higher_better }
+      implied_vs_historical_move: { weight: 0.15, direction: higher_better }
+
+  structural_risk_exposure:
+    weight: 0.08
+    signals:
+      geographic_concentration: { weight: 0.25, direction: lower_better }
+      supplier_dependency: { weight: 0.25, direction: lower_better }
+      commodity_sensitivity: { weight: 0.20, direction: lower_better }
+      fx_exposure: { weight: 0.15, direction: lower_better }
+      top_customer_pct: { weight: 0.15, direction: lower_better }
