@@ -1,0 +1,25 @@
+{
+  "name": "a2ui-chat-poc",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A simple PoC: chat with an LLM and get dynamic A2UI-rendered responses",
+  "scripts": {
+    "dev": "vite dev",
+    "build:deps": "cd ../../../../../renderers/web_core && npm install && npm run build && cd ../lit && npm install && npm run build"
+  },
+  "dependencies": {
+    "@a2ui/lit": "file:../../../../../renderers/lit",
+    "@lit-labs/signals": "^0.1.3",
+    "@lit/context": "^1.1.4",
+    "chart.js": "^4.5.1",
+    "lit": "^3.3.1"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@types/node": "^22.0.0",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.8.3",
+    "vite": "^6.0.0"
+  }
+}
